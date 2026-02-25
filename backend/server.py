@@ -1,16 +1,23 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Header, Response
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta
+from jose import jwt
 import os
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
 import uuid
-from datetime import datetime, timezone
+import secrets
+import qrcode
+import io
+from pathlib import Path
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse
 
-
+# Load environment variables
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -19,56 +26,827 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Environment variables
+JWT_SECRET = os.environ.get('JWT_SECRET', 'secret')
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
 
-# Create a router with the /api prefix
+# Create FastAPI app
+app = FastAPI(title="AdGrid API")
 api_router = APIRouter(prefix="/api")
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+# ============= MODELS =============
+
+class User(BaseModel):
+    user_id: str
+    email: str
+    name: str
+    role: str  # admin, customer, agent
+    phone: Optional[str] = None
+    picture: Optional[str] = None
+    aadhaar_verified: bool = False
+    created_at: datetime
+
+class UserSession(BaseModel):
+    user_id: str
+    session_token: str
+    expires_at: datetime
+    created_at: datetime
+
+class Hoarding(BaseModel):
+    hoarding_id: str
+    title: str
+    location: str
+    area: str
+    coordinates: Dict[str, float]  # {lat, lng}
+    size: str  # e.g., "20x10 ft"
+    category: str  # Premium, Normal, Economy
+    status: str  # Available, Booked, Maintenance
+    price_per_day: float
+    images: List[str]
+    visibility_level: str  # High, Medium, Low
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class Booking(BaseModel):
+    booking_id: str
+    user_id: str
+    hoarding_id: str
+    start_date: str
+    end_date: str
+    duration_days: int
+    amount: float
+    status: str  # Pending, Confirmed, Active, Completed, Cancelled
+    payment_status: str  # Pending, Paid, Failed
+    payment_id: Optional[str] = None
+    noc_number: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class MaintenanceLog(BaseModel):
+    log_id: str
+    hoarding_id: str
+    agent_id: str
+    status: str  # Active, Under Maintenance, Damaged
+    notes: Optional[str] = None
+    images: List[str] = []
+    created_at: datetime
+
+class ElectricPole(BaseModel):
+    pole_id: str
+    location: str
+    coordinates: Dict[str, float]
+    status: str  # Active, Maintenance
+    created_at: datetime
+
+class PaymentTransaction(BaseModel):
+    transaction_id: str
+    booking_id: str
+    session_id: str
+    amount: float
+    currency: str
+    status: str  # Pending, Completed, Failed
+    payment_status: str
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    updated_at: datetime
+
+class ChatMessage(BaseModel):
+    session_id: str
+    message: str
+    role: str  # user, assistant
+    timestamp: datetime
+
+# Request Models
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class RegisterRequest(BaseModel):
+    email: str
+    name: str
+    password: str
+    role: str  # customer, agent
+
+class SessionRequest(BaseModel):
+    session_id: str
+
+class VerifyAadhaarRequest(BaseModel):
+    aadhaar_number: str
+    otp: str
+
+class BookingRequest(BaseModel):
+    hoarding_id: str
+    start_date: str
+    end_date: str
+
+class MaintenanceUpdateRequest(BaseModel):
+    hoarding_id: str
+    status: str
+    notes: Optional[str] = None
+    images: Optional[List[str]] = []
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+class PosterGenerateRequest(BaseModel):
+    prompt: str
+    hoarding_id: Optional[str] = None
+
+# ============= AUTHENTICATION UTILITIES =============
+
+def create_jwt_token(user_id: str, role: str) -> str:
+    """Create JWT token"""
+    payload = {
+        "user_id": user_id,
+        "role": role,
+        "exp": datetime.now(timezone.utc) + timedelta(days=7)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
+def decode_jwt_token(token: str) -> dict:
+    """Decode JWT token"""
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+async def get_current_user(
+    request: Request,
+    authorization: Optional[str] = Header(None)
+) -> dict:
+    """Get current authenticated user from cookie or header"""
+    # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Try to get token from cookie first
+    session_token = request.cookies.get("session_token")
+    
+    # Fallback to Authorization header
+    if not session_token and authorization:
+        if authorization.startswith("Bearer "):
+            session_token = authorization.replace("Bearer ", "")
+    
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Check session in database
+    session_doc = await db.user_sessions.find_one(
+        {"session_token": session_token},
+        {"_id": 0}
+    )
+    
+    if not session_doc:
+        raise HTTPException(status_code=401, detail="Session not found")
+    
+    # Check expiry
+    expires_at = session_doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
+    
+    # Get user
+    user_doc = await db.users.find_one(
+        {"user_id": session_doc["user_id"]},
+        {"_id": 0}
+    )
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user_doc
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+# ============= AUTH ROUTES =============
 
-# Add your routes to the router instead of directly to app
+@api_router.post("/auth/register")
+async def register(req: RegisterRequest):
+    """Register new user with JWT"""
+    # Check if user exists
+    existing = await db.users.find_one({"email": req.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    user_data = {
+        "user_id": user_id,
+        "email": req.email,
+        "name": req.name,
+        "role": req.role,
+        "aadhaar_verified": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.users.insert_one(user_data)
+    
+    # Create session
+    session_token = f"jwt_{secrets.token_urlsafe(32)}"
+    session_data = {
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_data)
+    
+    return {
+        "user": user_data,
+        "session_token": session_token
+    }
+
+@api_router.post("/auth/login")
+async def login(req: LoginRequest):
+    """Login with JWT (simplified for demo)"""
+    user_doc = await db.users.find_one({"email": req.email}, {"_id": 0})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Create new session
+    session_token = f"jwt_{secrets.token_urlsafe(32)}"
+    session_data = {
+        "user_id": user_doc["user_id"],
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_data)
+    
+    return {
+        "user": user_doc,
+        "session_token": session_token
+    }
+
+@api_router.post("/auth/session")
+async def process_emergent_session(req: SessionRequest, response: Response):
+    """Process Emergent OAuth session_id"""
+    # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    
+    # Call Emergent Auth API
+    import requests
+    auth_response = requests.get(
+        "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+        headers={"X-Session-ID": req.session_id}
+    )
+    
+    if auth_response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Invalid session")
+    
+    data = auth_response.json()
+    
+    # Check if user exists
+    user_doc = await db.users.find_one({"email": data["email"]}, {"_id": 0})
+    
+    if not user_doc:
+        # Create new user
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        user_data = {
+            "user_id": user_id,
+            "email": data["email"],
+            "name": data["name"],
+            "picture": data.get("picture"),
+            "role": "customer",  # Default role
+            "aadhaar_verified": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(user_data)
+        user_doc = user_data
+    
+    # Create session
+    session_token = data["session_token"]
+    session_data = {
+        "user_id": user_doc["user_id"],
+        "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.user_sessions.insert_one(session_data)
+    
+    # Set httpOnly cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7*24*60*60
+    )
+    
+    return {"user": user_doc, "session_token": session_token}
+
+@api_router.get("/auth/me")
+async def get_me(user: dict = Depends(get_current_user)):
+    """Get current user"""
+    return user
+
+@api_router.post("/auth/logout")
+async def logout(response: Response, user: dict = Depends(get_current_user)):
+    """Logout user"""
+    # Delete session
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    
+    # Clear cookie
+    response.delete_cookie("session_token", path="/")
+    
+    return {"message": "Logged out successfully"}
+
+@api_router.post("/auth/verify-aadhaar")
+async def verify_aadhaar(req: VerifyAadhaarRequest, user: dict = Depends(get_current_user)):
+    """Verify Aadhaar (mock implementation)"""
+    # In production, integrate with UIDAI API
+    # For demo, accept any 12-digit number and 6-digit OTP
+    
+    if len(req.aadhaar_number) != 12 or len(req.otp) != 6:
+        raise HTTPException(status_code=400, detail="Invalid Aadhaar or OTP")
+    
+    # Update user
+    await db.users.update_one(
+        {"user_id": user["user_id"]},
+        {"$set": {"aadhaar_verified": True}}
+    )
+    
+    return {"message": "Aadhaar verified successfully", "verified": True}
+
+# ============= HOARDINGS ROUTES =============
+
+@api_router.get("/hoardings")
+async def get_hoardings(
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    area: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None
+):
+    """Get all hoardings with filters"""
+    query = {}
+    
+    if category:
+        query["category"] = category
+    if status:
+        query["status"] = status
+    if area:
+        query["area"] = {"$regex": area, "$options": "i"}
+    if min_price is not None or max_price is not None:
+        query["price_per_day"] = {}
+        if min_price is not None:
+            query["price_per_day"]["$gte"] = min_price
+        if max_price is not None:
+            query["price_per_day"]["$lte"] = max_price
+    
+    hoardings = await db.hoardings.find(query, {"_id": 0}).to_list(1000)
+    return {"hoardings": hoardings, "count": len(hoardings)}
+
+@api_router.get("/hoardings/{hoarding_id}")
+async def get_hoarding(hoarding_id: str):
+    """Get single hoarding"""
+    hoarding = await db.hoardings.find_one({"hoarding_id": hoarding_id}, {"_id": 0})
+    if not hoarding:
+        raise HTTPException(status_code=404, detail="Hoarding not found")
+    return hoarding
+
+@api_router.post("/hoardings")
+async def create_hoarding(hoarding: Hoarding, user: dict = Depends(get_current_user)):
+    """Create new hoarding (Admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    hoarding_data = hoarding.dict()
+    hoarding_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    hoarding_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.hoardings.insert_one(hoarding_data)
+    return hoarding_data
+
+@api_router.put("/hoardings/{hoarding_id}")
+async def update_hoarding(
+    hoarding_id: str,
+    updates: dict,
+    user: dict = Depends(get_current_user)
+):
+    """Update hoarding (Admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.hoardings.update_one(
+        {"hoarding_id": hoarding_id},
+        {"$set": updates}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Hoarding not found")
+    
+    return {"message": "Updated successfully"}
+
+# ============= BOOKINGS ROUTES =============
+
+@api_router.post("/bookings")
+async def create_booking(req: BookingRequest, user: dict = Depends(get_current_user)):
+    """Create new booking"""
+    # Check if hoarding exists and available
+    hoarding = await db.hoardings.find_one({"hoarding_id": req.hoarding_id}, {"_id": 0})
+    if not hoarding:
+        raise HTTPException(status_code=404, detail="Hoarding not found")
+    
+    if hoarding["status"] != "Available":
+        raise HTTPException(status_code=400, detail="Hoarding not available")
+    
+    # Calculate duration and amount
+    start = datetime.fromisoformat(req.start_date)
+    end = datetime.fromisoformat(req.end_date)
+    duration = (end - start).days
+    amount = duration * hoarding["price_per_day"]
+    
+    # Create booking
+    booking_id = f"BKG_{uuid.uuid4().hex[:10].upper()}"
+    booking_data = {
+        "booking_id": booking_id,
+        "user_id": user["user_id"],
+        "hoarding_id": req.hoarding_id,
+        "start_date": req.start_date,
+        "end_date": req.end_date,
+        "duration_days": duration,
+        "amount": amount,
+        "status": "Pending",
+        "payment_status": "Pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.bookings.insert_one(booking_data)
+    
+    return booking_data
+
+@api_router.get("/bookings")
+async def get_bookings(user: dict = Depends(get_current_user)):
+    """Get user bookings"""
+    if user["role"] == "admin":
+        bookings = await db.bookings.find({}, {"_id": 0}).to_list(1000)
+    else:
+        bookings = await db.bookings.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(1000)
+    
+    return {"bookings": bookings}
+
+@api_router.get("/bookings/{booking_id}")
+async def get_booking(booking_id: str, user: dict = Depends(get_current_user)):
+    """Get single booking"""
+    booking = await db.bookings.find_one({"booking_id": booking_id}, {"_id": 0})
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    # Check access
+    if user["role"] != "admin" and booking["user_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return booking
+
+# ============= PAYMENT ROUTES =============
+
+@api_router.post("/payments/checkout")
+async def create_checkout(booking_id: str, origin_url: str, user: dict = Depends(get_current_user)):
+    """Create Stripe checkout session"""
+    # Get booking
+    booking = await db.bookings.find_one({"booking_id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    if booking["user_id"] != user["user_id"] and user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Initialize Stripe
+    host_url = origin_url
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    # Create checkout session
+    success_url = f"{origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/payment-cancel"
+    
+    checkout_request = CheckoutSessionRequest(
+        amount=float(booking["amount"]),
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={"booking_id": booking_id, "user_id": user["user_id"]}
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Create payment transaction
+    transaction_data = {
+        "transaction_id": f"TXN_{uuid.uuid4().hex[:10].upper()}",
+        "booking_id": booking_id,
+        "session_id": session.session_id,
+        "amount": booking["amount"],
+        "currency": "usd",
+        "status": "Pending",
+        "payment_status": "Pending",
+        "metadata": {"user_id": user["user_id"]},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.payment_transactions.insert_one(transaction_data)
+    
+    return {"url": session.url, "session_id": session.session_id}
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(session_id: str):
+    """Get payment status"""
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+    checkout_status = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Update transaction
+    transaction = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    
+    if transaction and checkout_status.payment_status == "paid":
+        # Update transaction
+        await db.payment_transactions.update_one(
+            {"session_id": session_id, "payment_status": {"$ne": "Completed"}},
+            {"$set": {
+                "status": "Completed",
+                "payment_status": "Completed",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Update booking
+        noc_number = f"NOC_{uuid.uuid4().hex[:10].upper()}"
+        await db.bookings.update_one(
+            {"booking_id": transaction["booking_id"]},
+            {"$set": {
+                "payment_status": "Paid",
+                "status": "Confirmed",
+                "noc_number": noc_number,
+                "payment_id": session_id,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Update hoarding status
+        booking = await db.bookings.find_one({"booking_id": transaction["booking_id"]}, {"_id": 0})
+        await db.hoardings.update_one(
+            {"hoarding_id": booking["hoarding_id"]},
+            {"$set": {"status": "Booked", "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    return {
+        "status": checkout_status.status,
+        "payment_status": checkout_status.payment_status,
+        "amount_total": checkout_status.amount_total,
+        "currency": checkout_status.currency
+    }
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks"""
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature")
+    
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
+    
+    try:
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        logger.info(f"Webhook received: {webhook_response.event_type}")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============= ADMIN ROUTES =============
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(user: dict = Depends(get_current_user)):
+    """Get admin dashboard stats"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Count stats
+    total_hoardings = await db.hoardings.count_documents({})
+    available_hoardings = await db.hoardings.count_documents({"status": "Available"})
+    booked_hoardings = await db.hoardings.count_documents({"status": "Booked"})
+    maintenance_hoardings = await db.hoardings.count_documents({"status": "Maintenance"})
+    
+    # Category breakdown
+    premium_count = await db.hoardings.count_documents({"category": "Premium"})
+    normal_count = await db.hoardings.count_documents({"category": "Normal"})
+    economy_count = await db.hoardings.count_documents({"category": "Economy"})
+    
+    # Revenue calculation
+    completed_bookings = await db.bookings.find({"payment_status": "Paid"}, {"_id": 0}).to_list(1000)
+    total_revenue = sum(b["amount"] for b in completed_bookings)
+    
+    # Monthly revenue
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    monthly_bookings = [b for b in completed_bookings if datetime.fromisoformat(b["created_at"]) >= month_start]
+    monthly_revenue = sum(b["amount"] for b in monthly_bookings)
+    
+    # Electric poles
+    total_poles = await db.electric_poles.count_documents({})
+    
+    # In-process bookings
+    in_process = await db.bookings.count_documents({"status": "Pending"})
+    
+    return {
+        "total_hoardings": total_hoardings,
+        "available_hoardings": available_hoardings,
+        "booked_hoardings": booked_hoardings,
+        "maintenance_hoardings": maintenance_hoardings,
+        "in_process": in_process,
+        "total_electric_poles": total_poles,
+        "category_breakdown": {
+            "premium": premium_count,
+            "normal": normal_count,
+            "economy": economy_count
+        },
+        "monthly_revenue": monthly_revenue,
+        "yearly_revenue": total_revenue,
+        "revenue_growth": 12.5  # Mock percentage
+    }
+
+@api_router.get("/admin/recent-bookings")
+async def get_recent_bookings(user: dict = Depends(get_current_user)):
+    """Get recent bookings for admin"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    bookings = await db.bookings.find({}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Enrich with user and hoarding info
+    for booking in bookings:
+        user_doc = await db.users.find_one({"user_id": booking["user_id"]}, {"_id": 0, "name": 1, "email": 1})
+        hoarding_doc = await db.hoardings.find_one({"hoarding_id": booking["hoarding_id"]}, {"_id": 0, "title": 1, "location": 1})
+        booking["user_name"] = user_doc.get("name") if user_doc else "Unknown"
+        booking["hoarding_title"] = hoarding_doc.get("title") if hoarding_doc else "Unknown"
+    
+    return {"bookings": bookings}
+
+# ============= AGENT ROUTES =============
+
+@api_router.get("/agent/hoardings")
+async def get_agent_hoardings(user: dict = Depends(get_current_user)):
+    """Get hoardings for agent (maintenance view)"""
+    if user["role"] != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Get all hoardings (in production, filter by assigned agent)
+    hoardings = await db.hoardings.find({}, {"_id": 0}).to_list(1000)
+    return {"hoardings": hoardings}
+
+@api_router.post("/agent/maintenance")
+async def update_maintenance(req: MaintenanceUpdateRequest, user: dict = Depends(get_current_user)):
+    """Update maintenance status"""
+    if user["role"] != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Update hoarding status
+    await db.hoardings.update_one(
+        {"hoarding_id": req.hoarding_id},
+        {"$set": {"status": req.status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Create maintenance log
+    log_data = {
+        "log_id": f"LOG_{uuid.uuid4().hex[:10].upper()}",
+        "hoarding_id": req.hoarding_id,
+        "agent_id": user["user_id"],
+        "status": req.status,
+        "notes": req.notes,
+        "images": req.images or [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.maintenance_logs.insert_one(log_data)
+    
+    return {"message": "Maintenance updated successfully", "log": log_data}
+
+@api_router.get("/agent/maintenance/{hoarding_id}")
+async def get_maintenance_logs(hoarding_id: str, user: dict = Depends(get_current_user)):
+    """Get maintenance logs for a hoarding"""
+    if user["role"] not in ["agent", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    logs = await db.maintenance_logs.find({"hoarding_id": hoarding_id}, {"_id": 0}).to_list(100)
+    return {"logs": logs}
+
+# ============= AI ROUTES =============
+
+@api_router.post("/ai/chat")
+async def ai_chatbot(req: ChatRequest, user: dict = Depends(get_current_user)):
+    """AI Chatbot for assistance"""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="AI service not configured")
+    
+    session_id = req.session_id or f"chat_{user['user_id']}_{uuid.uuid4().hex[:8]}"
+    
+    # Initialize chat
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=session_id,
+        system_message="You are AdGrid Assistant, helping users with billboard/hoarding bookings, pricing, and information. Be helpful and concise."
+    )
+    chat.with_model("openai", "gpt-5.2")
+    
+    # Send message
+    user_message = UserMessage(text=req.message)
+    response = await chat.send_message(user_message)
+    
+    # Save to database
+    await db.chat_history.insert_one({
+        "session_id": session_id,
+        "user_id": user["user_id"],
+        "message": req.message,
+        "response": response,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"response": response, "session_id": session_id}
+
+@api_router.post("/ai/generate-poster")
+async def generate_poster(req: PosterGenerateRequest, user: dict = Depends(get_current_user)):
+    """Generate AI poster for advertising"""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="AI service not configured")
+    
+    # Use OpenAI DALL-E for image generation
+    from openai import AsyncOpenAI
+    client_openai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY)
+    
+    try:
+        response = await client_openai.images.generate(
+            model="dall-e-3",
+            prompt=req.prompt,
+            size="1024x1024",
+            quality="standard",
+            n=1
+        )
+        
+        image_url = response.data[0].url
+        
+        # Save generation record
+        await db.poster_generations.insert_one({
+            "user_id": user["user_id"],
+            "hoarding_id": req.hoarding_id,
+            "prompt": req.prompt,
+            "image_url": image_url,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"image_url": image_url, "prompt": req.prompt}
+    except Exception as e:
+        logger.error(f"Poster generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate poster: {str(e)}")
+
+# ============= NOC ROUTES =============
+
+@api_router.get("/noc/{booking_id}/download")
+async def download_noc(booking_id: str, user: dict = Depends(get_current_user)):
+    """Generate and download NOC certificate"""
+    booking = await db.bookings.find_one({"booking_id": booking_id}, {"_id": 0})
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    if booking["user_id"] != user["user_id"] and user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not booking.get("noc_number"):
+        raise HTTPException(status_code=400, detail="NOC not generated yet. Complete payment first.")
+    
+    # Generate QR code for NOC
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(f"NOC:{booking['noc_number']}:BKG:{booking_id}")
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_io = io.BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    return StreamingResponse(img_io, media_type="image/png", headers={
+        "Content-Disposition": f"attachment; filename=NOC_{booking['noc_number']}.png"
+    })
+
+# ============= ROOT ROUTE =============
+
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "AdGrid API - Smart Billboard Management System"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
+# Include router
 app.include_router(api_router)
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -76,13 +854,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
