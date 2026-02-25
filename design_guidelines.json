@@ -1,0 +1,168 @@
+{
+  "theme": {
+    "mode": "light",
+    "strategy": "Smart City Clean",
+    "description": "High-contrast, authoritative, transparent. White backgrounds with strong tech-blue accents. Trustworthy government aesthetic meets modern SaaS utility.",
+    "emotional_archetype": "ARCHETYPE 4: SWISS & HIGH-CONTRAST (Authority, Clarity, Truth)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Chivo, sans-serif",
+      "weights": ["700", "900"],
+      "usage": "Use for all page titles, card headers, and kpi values. Tight tracking (-0.02em)."
+    },
+    "body": {
+      "font_family": "Inter, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Use for all standard text, table data, and form labels. Good readability at small sizes."
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Use for IDs, coordinates, and system logs."
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-black tracking-tight text-slate-900",
+      "h2": "text-3xl font-bold tracking-tight text-slate-900",
+      "h3": "text-2xl font-bold text-slate-800",
+      "body_lg": "text-lg text-slate-700 leading-relaxed",
+      "body_base": "text-base text-slate-600 leading-relaxed",
+      "caption": "text-sm text-slate-500 font-medium"
+    }
+  },
+  "colors": {
+    "primary": {
+      "name": "Smart City Blue",
+      "hex": "#0056D2",
+      "usage": "Primary buttons, active states, key branding elements. DO NOT OVERUSE."
+    },
+    "secondary": {
+      "name": "Slate Obsidian",
+      "hex": "#0F172A",
+      "usage": "Sidebars, heavy headers, footer."
+    },
+    "background": {
+      "page": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "subtle": "#F1F5F9"
+    },
+    "status": {
+      "available": {
+        "hex": "#22C55E",
+        "bg": "#DCFCE7",
+        "label": "Available"
+      },
+      "booked": {
+        "hex": "#EF4444",
+        "bg": "#FEE2E2",
+        "label": "Booked"
+      },
+      "maintenance": {
+        "hex": "#F97316",
+        "bg": "#FFEDD5",
+        "label": "Under Maintenance"
+      }
+    },
+    "text": {
+      "primary": "#0F172A",
+      "secondary": "#475569",
+      "muted": "#94A3B8"
+    }
+  },
+  "layout_strategies": {
+    "admin_dashboard": {
+      "type": "Bento Grid (Mode B)",
+      "grid_cols": "grid-cols-1 md:grid-cols-4",
+      "gap": "gap-4 md:gap-6",
+      "padding": "p-6",
+      "description": "High density data visualization. Use white cards with shadow-sm and 1px border-slate-200."
+    },
+    "customer_browse": {
+      "type": "Masonry/Card Grid (Mode A)",
+      "grid_cols": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+      "gap": "gap-8",
+      "padding": "p-8",
+      "description": "Visual focus. Large image cards with clear price and status badges."
+    },
+    "agent_mobile": {
+      "type": "Single Column Stack",
+      "grid_cols": "grid-cols-1",
+      "gap": "gap-4",
+      "padding": "p-4",
+      "description": "Touch-friendly. Large touch targets (min 44px). High contrast cards for outdoor visibility."
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "bg-white border border-slate-200 shadow-sm rounded-xl hover:shadow-md transition-shadow duration-200",
+      "padding": "p-6"
+    },
+    "buttons": {
+      "primary": "bg-primary text-white hover:bg-primary/90 rounded-md px-4 py-2 font-medium shadow-sm active:scale-95 transition-transform",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-md px-4 py-2 font-medium shadow-sm",
+      "ghost": "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md px-4 py-2"
+    },
+    "inputs": {
+      "style": "bg-white border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400"
+    },
+    "charts": {
+      "library": "recharts",
+      "styles": "Use simple Bar, Line, and Pie charts. Avoid 3D effects. Use official color palette."
+    },
+    "maps": {
+      "library": "react-map-gl",
+      "style": "mapbox://styles/mapbox/light-v11",
+      "description": "Use full-width or large container maps. Overlay custom markers for billboards."
+    },
+    "tables": {
+      "style": "w-full text-sm text-left. Header: bg-slate-50 text-slate-500 font-medium uppercase tracking-wider. Row: border-b border-slate-100 hover:bg-slate-50/50."
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "shadow-sm, shadow-md (hover), shadow-lg (dropdowns)",
+    "borders": "border border-slate-200",
+    "radius": "rounded-lg (components), rounded-xl (containers)",
+    "micro_interactions": "All interactive elements must have hover, active, and focus states. List items should stagger fade-in on load."
+  },
+  "image_assets": {
+    "hero_billboard": {
+      "url": "https://images.pexels.com/photos/6684281/pexels-photo-6684281.jpeg",
+      "alt": "Modern digital billboard in city night",
+      "usage": "Customer landing page hero, login backgrounds"
+    },
+    "admin_dashboard_bg": {
+      "url": "https://images.pexels.com/photos/19317897/pexels-photo-19317897.jpeg",
+      "alt": "Smart city control room",
+      "usage": "Admin login background, reports section header"
+    },
+    "agent_field": {
+      "url": "https://images.pexels.com/photos/8961018/pexels-photo-8961018.jpeg",
+      "alt": "Field agent with tablet",
+      "usage": "Agent portal login, maintenance guidelines"
+    },
+    "map_preview": {
+      "url": "https://images.unsplash.com/photo-1611490981070-26751be1614f",
+      "alt": "Aerial city map",
+      "usage": "GIS section placeholder, map backgrounds"
+    },
+    "placeholders": [
+      "https://images.unsplash.com/photo-1762417582263-7f423d344b77",
+      "https://images.unsplash.com/photo-1759548845680-8fb15e1f95e1"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install required packages: npm install lucide-react recharts react-map-gl mapbox-gl framer-motion date-fns clsx tailwind-merge",
+    "Setup 'react-map-gl' for the GIS Map component. Ensure it has a fallback if no token is provided.",
+    "Use 'recharts' for all analytics (BarChart for revenue, PieChart for category distribution).",
+    "Implement Role-Based Access Control (RBAC) in the frontend routing.",
+    "Create a 'Sidebar' layout for the Admin Dashboard and a 'Navbar' layout for Customers.",
+    "Ensure 'Agent Dashboard' is strictly mobile-responsive (stack layout).",
+    "Use the provided hex codes for status badges explicitly. Do not use generic Tailwind colors like 'bg-green-500' without verifying contrast."
+  ],
+  "universal_guidelines": {
+    "spacing": "Use p-6 or p-8 for main containers. Avoid cramped UIs.",
+    "alignment": "Left align text for readability. Center align only for hero titles.",
+    "contrast": "Ensure text is slate-600 or darker on white backgrounds.",
+    "accessibility": "All inputs must have aria-labels. Images must have alt text.",
+    "testing": "All interactive elements must have data-testid attributes (e.g., 'login-btn', 'booking-card-1')."
+  }
+}
