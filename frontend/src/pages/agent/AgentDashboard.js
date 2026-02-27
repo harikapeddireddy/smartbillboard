@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import { MapPin, LogOut, Upload, FileText } from 'lucide-react';
@@ -10,6 +11,7 @@ const API = `${BACKEND_URL}/api`;
 
 const AgentDashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [hoardings, setHoardings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedHoarding, setSelectedHoarding] = useState(null);

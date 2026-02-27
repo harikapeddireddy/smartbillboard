@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Package, AlertTriangle, LogOut } from 'lucide-react';
+import { TrendingUp, DollarSign, Package, AlertTriangle, LogOut, FileText } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import { toast } from 'sonner';
 
@@ -11,9 +12,13 @@ const API = `${BACKEND_URL}/api`;
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentBookings, setRecentBookings] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     fetchData();
@@ -34,6 +39,30 @@ const AdminDashboard = () => {
 
       setStats(statsRes.data);
       setRecentBookings(bookingsRes.data.bookings);
+      
+      // Fetch monthly revenue data for the year
+      const revenueData = [];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      for (let month = 1; month <= 12; month++) {
+        try {
+          const revRes = await axios.get(
+            `${API}/admin/revenue?month=${month}&year=${selectedYear}`,
+            config
+          );
+          revenueData.push({
+            name: months[month - 1],
+            revenue: revRes.data.revenue
+          });
+        } catch (err) {
+          revenueData.push({
+            name: months[month - 1],
+            revenue: 0
+          });
+        }
+      }
+      
+      setMonthlyRevenue(revenueData);
     } catch (error) {
       toast.error('Failed to load dashboard data');
       console.error(error);
@@ -50,18 +79,9 @@ const AdminDashboard = () => {
     );
   }
 
-  const monthlyData = [
-    { name: 'Jan', revenue: 45000 },
-    { name: 'Feb', revenue: 52000 },
-    { name: 'Mar', revenue: 48000 },
-    { name: 'Apr', revenue: 61000 },
-    { name: 'May', revenue: 55000 },
-    { name: 'Jun', revenue: 67000 },
-  ];
-
   const categoryData = [
     { name: 'Premium', value: stats.category_breakdown.premium, color: '#0056D2' },
-    { name: 'Normal', value: stats.category_breakdown.normal, color: '#3B82F6' },
+    { name: 'Standard', value: stats.category_breakdown.standard, color: '#3B82F6' },
     { name: 'Economy', value: stats.category_breakdown.economy, color: '#93C5FD' },
   ];
 
@@ -99,6 +119,53 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Month/Year Filter */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 mb-6 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-slate-700">Filter Revenue:</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20"
+            >
+              <option value={1}>January</option>
+              <option value={2}>February</option>
+              <option value={3}>March</option>
+              <option value={4}>April</option>
+              <option value={5}>May</option>
+              <option value={6}>June</option>
+              <option value={7}>July</option>
+              <option value={8}>August</option>
+              <option value={9}>September</option>
+              <option value={10}>October</option>
+              <option value={11}>November</option>
+              <option value={12}>December</option>
+            </select>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20"
+            >
+              <option value={2024}>2024</option>
+              <option value={2025}>2025</option>
+              <option value={2026}>2026</option>
+              <option value={2027}>2027</option>
+            </select>
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 bg-[#0056D2] text-white rounded-md hover:bg-[#0056D2]/90 transition-colors"
+            >
+              Apply Filter
+            </button>
+          </div>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
+          >
+            Refresh Data
+          </button>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="total-hoardings-card">
@@ -148,7 +215,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-slate-900 mt-2">${stats.monthly_revenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900 mt-2">₹{stats.monthly_revenue.toLocaleString()}</p>
               </div>
               <DollarSign className="w-8 h-8 text-[#0056D2]" />
             </div>
@@ -158,7 +225,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600">Yearly Revenue</p>
-                <p className="text-2xl font-bold text-slate-900 mt-2">${stats.yearly_revenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900 mt-2">₹{stats.yearly_revenue.toLocaleString()}</p>
               </div>
               <DollarSign className="w-8 h-8 text-[#22C55E]" />
             </div>
@@ -183,7 +250,7 @@ const AdminDashboard = () => {
               Monthly Income
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
+              <BarChart data={monthlyRevenue}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="name" stroke="#64748b" />
                 <YAxis stroke="#64748b" />
@@ -246,7 +313,7 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-4 py-3">{booking.user_name}</td>
                     <td className="px-4 py-3">{booking.hoarding_title}</td>
-                    <td className="px-4 py-3 font-semibold">${booking.amount}</td>
+                    <td className="px-4 py-3 font-semibold">₹{booking.amount}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={booking.status} />
                     </td>

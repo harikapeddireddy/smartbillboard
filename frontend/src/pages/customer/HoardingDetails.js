@@ -66,20 +66,14 @@ const HoardingDetails = () => {
       );
 
       const booking = response.data;
-      toast.success('Booking created! Proceeding to payment...');
-
-      // Create payment checkout
-      const paymentResponse = await axios.post(
-        `${API}/payments/checkout?booking_id=${booking.booking_id}&origin_url=${window.location.origin}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true
-        }
-      );
-
-      // Redirect to Stripe
-      window.location.href = paymentResponse.data.url;
+      toast.success(`🎉 Booking Confirmed! Your Booking ID: ${booking.booking_id}`, {
+        duration: 4000
+      });
+      
+      // Navigate to bookings page
+      setTimeout(() => {
+        navigate('/customer/bookings');
+      }, 2000);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Booking failed');
       console.error(error);

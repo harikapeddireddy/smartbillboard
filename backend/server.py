@@ -49,7 +49,7 @@ class User(BaseModel):
     phone: Optional[str] = None
     picture: Optional[str] = None
     aadhaar_verified: bool = False
-    email_verified: bool = False
+    mobile_verified: bool = False
     created_at: datetime
 
 class UserSession(BaseModel):
@@ -133,12 +133,17 @@ class RegisterRequest(BaseModel):
     name: str
     password: str
     role: str  # customer, agent
+    phone: str  # Mobile number
 
 class SessionRequest(BaseModel):
     session_id: str
 
 class VerifyAadhaarRequest(BaseModel):
     aadhaar_number: str
+    otp: str
+
+class VerifyMobileRequest(BaseModel):
+    phone: str
     otp: str
 
 class BookingRequest(BaseModel):
@@ -178,6 +183,16 @@ class ChatRequest(BaseModel):
 class PosterGenerateRequest(BaseModel):
     prompt: str
     hoarding_id: Optional[str] = None
+
+class ComplaintRequest(BaseModel):
+    subject: str
+    description: str
+    category: str  # Technical, Billing, Service, Other
+
+class FeedbackRequest(BaseModel):
+    rating: int  # 1-5
+    comment: str
+    category: str  # Platform, Service, Experience
 
 # ============= AUTHENTICATION UTILITIES =============
 
@@ -260,9 +275,10 @@ async def register(req: RegisterRequest):
         "user_id": user_id,
         "email": req.email,
         "name": req.name,
+        "phone": req.phone,
         "role": req.role,
         "aadhaar_verified": False,
-        "email_verified": False,
+        "mobile_verified": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
@@ -379,6 +395,49 @@ async def logout(response: Response, user: dict = Depends(get_current_user)):
     response.delete_cookie("session_token", path="/")
     
     return {"message": "Logged out successfully"}
+
+@api_router.post("/auth/send-mobile-otp")
+async def send_mobile_otp(phone: str):
+    """Send OTP to mobile number (mock implementation)"""
+    # Generate 6-digit OTP
+    otp = str(secrets.randbelow(1000000)).zfill(6)
+    
+    # Store OTP in database with expiry
+    await db.mobile_otps.insert_one({
+        "phone": phone,
+        "otp": otp,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # In production, send SMS via Twilio/other SMS provider
+    logger.info(f"Mobile OTP for {phone}: {otp}")
+    
+    return {"message": "OTP sent to mobile", "otp": otp}  # Remove OTP in production
+
+@api_router.post("/auth/verify-mobile")
+async def verify_mobile(req: VerifyMobileRequest):
+    """Verify mobile OTP"""
+    otp_doc = await db.mobile_otps.find_one(
+        {"phone": req.phone, "otp": req.otp},
+        {"_id": 0}
+    )
+    
+    if not otp_doc:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(otp_doc["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="OTP expired")
+    
+    # Delete used OTP
+    await db.mobile_otps.delete_one({"phone": req.phone, "otp": req.otp})
+    
+    return {"message": "Mobile verified successfully", "verified": True}
 
 @api_router.post("/auth/verify-aadhaar")
 async def verify_aadhaar(req: VerifyAadhaarRequest, user: dict = Depends(get_current_user)):
@@ -532,7 +591,7 @@ async def update_hoarding(
 
 @api_router.post("/bookings")
 async def create_booking(req: BookingRequest, user: dict = Depends(get_current_user)):
-    """Create new booking"""
+    """Create new booking - Direct booking without payment"""
     # Check if hoarding exists and available
     hoarding = await db.hoardings.find_one({"hoarding_id": req.hoarding_id}, {"_id": 0})
     if not hoarding:
@@ -547,23 +606,33 @@ async def create_booking(req: BookingRequest, user: dict = Depends(get_current_u
     duration = (end - start).days
     amount = duration * hoarding["price_per_day"]
     
-    # Create booking
+    # Generate NOC number
+    noc_number = f"NOC_{uuid.uuid4().hex[:10].upper()}"
+    
+    # Create booking - direct confirmation without payment
     booking_id = f"BKG_{uuid.uuid4().hex[:10].upper()}"
     booking_data = {
         "booking_id": booking_id,
         "user_id": user["user_id"],
         "hoarding_id": req.hoarding_id,
+        "hoarding_title": hoarding["title"],
         "start_date": req.start_date,
         "end_date": req.end_date,
         "duration_days": duration,
         "amount": amount,
-        "status": "Pending",
-        "payment_status": "Pending",
+        "status": "Confirmed",  # Direct confirmation
+        "noc_number": noc_number,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.bookings.insert_one(booking_data)
+    
+    # Update hoarding status to Booked
+    await db.hoardings.update_one(
+        {"hoarding_id": req.hoarding_id},
+        {"$set": {"status": "Booked", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
     
     return booking_data
 
@@ -591,6 +660,39 @@ async def get_booking(booking_id: str, user: dict = Depends(get_current_user)):
     
     return booking
 
+@api_router.post("/bookings/{booking_id}/cancel")
+async def cancel_booking(booking_id: str, user: dict = Depends(get_current_user)):
+    """Cancel a booking"""
+    booking = await db.bookings.find_one({"booking_id": booking_id}, {"_id": 0})
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    # Check access
+    if user["role"] != "admin" and booking["user_id"] != user["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Can only cancel Pending or Confirmed bookings
+    if booking["status"] not in ["Pending", "Confirmed"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel this booking")
+    
+    # Update booking status
+    await db.bookings.update_one(
+        {"booking_id": booking_id},
+        {"$set": {
+            "status": "Cancelled",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Update hoarding status back to Available
+    await db.hoardings.update_one(
+        {"hoarding_id": booking["hoarding_id"]},
+        {"$set": {"status": "Available", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "Booking cancelled successfully"}
+
 # ============= PAYMENT ROUTES =============
 
 @api_router.post("/payments/checkout")
@@ -615,7 +717,7 @@ async def create_checkout(booking_id: str, origin_url: str, user: dict = Depends
     
     checkout_request = CheckoutSessionRequest(
         amount=float(booking["amount"]),
-        currency="usd",
+        currency="inr",
         success_url=success_url,
         cancel_url=cancel_url,
         metadata={"booking_id": booking_id, "user_id": user["user_id"]}
@@ -629,7 +731,7 @@ async def create_checkout(booking_id: str, origin_url: str, user: dict = Depends
         "booking_id": booking_id,
         "session_id": session.session_id,
         "amount": booking["amount"],
-        "currency": "usd",
+        "currency": "inr",
         "status": "Pending",
         "payment_status": "Pending",
         "metadata": {"user_id": user["user_id"]},
@@ -673,7 +775,8 @@ async def get_payment_status(session_id: str):
             }}
         )
         
-        # Update hoarding status
+        # Hoarding status is already "Booked" from booking creation
+        # Just ensure it's still booked
         booking = await db.bookings.find_one({"booking_id": transaction["booking_id"]}, {"_id": 0})
         await db.hoardings.update_one(
             {"hoarding_id": booking["hoarding_id"]},
@@ -711,49 +814,55 @@ async def get_admin_stats(user: dict = Depends(get_current_user)):
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Count stats
-    total_hoardings = await db.hoardings.count_documents({})
-    available_hoardings = await db.hoardings.count_documents({"status": "Available"})
-    booked_hoardings = await db.hoardings.count_documents({"status": "Booked"})
-    maintenance_hoardings = await db.hoardings.count_documents({"status": "Maintenance"})
-    
-    # Category breakdown
-    premium_count = await db.hoardings.count_documents({"category": "Premium"})
-    normal_count = await db.hoardings.count_documents({"category": "Normal"})
-    economy_count = await db.hoardings.count_documents({"category": "Economy"})
-    
-    # Revenue calculation
-    completed_bookings = await db.bookings.find({"payment_status": "Paid"}, {"_id": 0}).to_list(1000)
-    total_revenue = sum(b["amount"] for b in completed_bookings)
-    
-    # Monthly revenue
-    now = datetime.now(timezone.utc)
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    monthly_bookings = [b for b in completed_bookings if datetime.fromisoformat(b["created_at"]) >= month_start]
-    monthly_revenue = sum(b["amount"] for b in monthly_bookings)
-    
-    # Electric poles
-    total_poles = await db.electric_poles.count_documents({})
-    
-    # In-process bookings
-    in_process = await db.bookings.count_documents({"status": "Pending"})
-    
-    return {
-        "total_hoardings": total_hoardings,
-        "available_hoardings": available_hoardings,
-        "booked_hoardings": booked_hoardings,
-        "maintenance_hoardings": maintenance_hoardings,
-        "in_process": in_process,
-        "total_electric_poles": total_poles,
-        "category_breakdown": {
-            "premium": premium_count,
-            "normal": normal_count,
-            "economy": economy_count
-        },
-        "monthly_revenue": monthly_revenue,
-        "yearly_revenue": total_revenue,
-        "revenue_growth": 12.5  # Mock percentage
-    }
+    try:
+        # Count stats
+        total_hoardings = await db.hoardings.count_documents({})
+        available_hoardings = await db.hoardings.count_documents({"status": "Available"})
+        booked_hoardings = await db.hoardings.count_documents({"status": "Booked"})
+        maintenance_hoardings = await db.hoardings.count_documents({"status": "Maintenance"})
+        
+        # Category breakdown
+        premium_count = await db.hoardings.count_documents({"category": "Premium"})
+        standard_count = await db.hoardings.count_documents({"category": "Standard"})
+        normal_count = await db.hoardings.count_documents({"category": "Normal"})
+        economy_count = await db.hoardings.count_documents({"category": "Economy"})
+        
+        # Revenue calculation
+        completed_bookings = await db.bookings.find({"status": {"$in": ["Confirmed", "Completed"]}}, {"_id": 0}).to_list(1000)
+        total_revenue = sum(b["amount"] for b in completed_bookings)
+        
+        # Monthly revenue
+        now = datetime.now(timezone.utc)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_bookings = [b for b in completed_bookings if datetime.fromisoformat(b["created_at"]) >= month_start]
+        monthly_revenue = sum(b["amount"] for b in monthly_bookings)
+        
+        # Electric poles
+        total_poles = await db.electric_poles.count_documents({})
+        
+        # In-process bookings
+        in_process = await db.bookings.count_documents({"status": "Pending"})
+        
+        return {
+            "total_hoardings": total_hoardings,
+            "available_hoardings": available_hoardings,
+            "booked_hoardings": booked_hoardings,
+            "maintenance_hoardings": maintenance_hoardings,
+            "in_process": in_process,
+            "total_electric_poles": total_poles or 475,
+            "category_breakdown": {
+                "premium": premium_count,
+                "standard": standard_count,
+                "normal": normal_count,
+                "economy": economy_count
+            },
+            "monthly_revenue": monthly_revenue,
+            "yearly_revenue": total_revenue,
+            "revenue_growth": 12.5  # Mock percentage
+        }
+    except Exception as e:
+        logger.error(f"Admin stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/admin/recent-bookings")
 async def get_recent_bookings(user: dict = Depends(get_current_user)):
@@ -771,6 +880,37 @@ async def get_recent_bookings(user: dict = Depends(get_current_user)):
         booking["hoarding_title"] = hoarding_doc.get("title") if hoarding_doc else "Unknown"
     
     return {"bookings": bookings}
+
+@api_router.get("/admin/revenue")
+async def get_revenue_by_month(month: Optional[int] = None, year: Optional[int] = None, user: dict = Depends(get_current_user)):
+    """Get revenue filtered by month and year"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Default to current month/year if not provided
+    now = datetime.now(timezone.utc)
+    target_month = month or now.month
+    target_year = year or now.year
+    
+    # Get all confirmed bookings
+    all_bookings = await db.bookings.find({"status": {"$in": ["Confirmed", "Completed"]}}, {"_id": 0}).to_list(1000)
+    
+    # Filter by month and year
+    filtered_bookings = []
+    for booking in all_bookings:
+        booking_date = datetime.fromisoformat(booking["created_at"])
+        if booking_date.month == target_month and booking_date.year == target_year:
+            filtered_bookings.append(booking)
+    
+    revenue = sum(b["amount"] for b in filtered_bookings)
+    
+    return {
+        "month": target_month,
+        "year": target_year,
+        "revenue": revenue,
+        "booking_count": len(filtered_bookings),
+        "bookings": filtered_bookings
+    }
 
 @api_router.get("/admin/hoarding-requests")
 async def get_hoarding_requests(user: dict = Depends(get_current_user)):
@@ -1057,6 +1197,66 @@ async def download_noc(booking_id: str, user: dict = Depends(get_current_user)):
     return StreamingResponse(img_io, media_type="image/png", headers={
         "Content-Disposition": f"attachment; filename=NOC_{booking['noc_number']}.png"
     })
+
+# ============= COMPLAINT & FEEDBACK ROUTES =============
+
+@api_router.post("/complaints")
+async def submit_complaint(req: ComplaintRequest, user: dict = Depends(get_current_user)):
+    """Submit a complaint"""
+    complaint_id = f"CMP_{uuid.uuid4().hex[:10].upper()}"
+    complaint_data = {
+        "complaint_id": complaint_id,
+        "user_id": user["user_id"],
+        "user_name": user["name"],
+        "user_email": user["email"],
+        "subject": req.subject,
+        "description": req.description,
+        "category": req.category,
+        "status": "Open",  # Open, In Progress, Resolved, Closed
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.complaints.insert_one(complaint_data)
+    
+    return {"message": "Complaint submitted successfully", "complaint_id": complaint_id}
+
+@api_router.get("/complaints")
+async def get_complaints(user: dict = Depends(get_current_user)):
+    """Get user complaints or all complaints for admin"""
+    if user["role"] == "admin":
+        complaints = await db.complaints.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    else:
+        complaints = await db.complaints.find({"user_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    return {"complaints": complaints}
+
+@api_router.post("/feedback")
+async def submit_feedback(req: FeedbackRequest, user: dict = Depends(get_current_user)):
+    """Submit feedback"""
+    feedback_id = f"FDB_{uuid.uuid4().hex[:10].upper()}"
+    feedback_data = {
+        "feedback_id": feedback_id,
+        "user_id": user["user_id"],
+        "user_name": user["name"],
+        "rating": req.rating,
+        "comment": req.comment,
+        "category": req.category,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.feedback.insert_one(feedback_data)
+    
+    return {"message": "Thank you for your feedback!", "feedback_id": feedback_id}
+
+@api_router.get("/feedback")
+async def get_feedback(user: dict = Depends(get_current_user)):
+    """Get all feedback (Admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    feedback = await db.feedback.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"feedback": feedback}
 
 # ============= ROOT ROUTE =============
 

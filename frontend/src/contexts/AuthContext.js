@@ -20,11 +20,21 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Check for stored session token
+      const storedToken = localStorage.getItem('session_token');
+      if (!storedToken) {
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
         withCredentials: true
       });
       setUser(response.data);
     } catch (error) {
+      // If token is invalid, clear it
+      localStorage.removeItem('session_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -42,8 +52,8 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
-  const register = async (email, name, password, role) => {
-    const response = await axios.post(`${API}/auth/register`, { email, name, password, role });
+  const register = async (email, name, password, role, phone) => {
+    const response = await axios.post(`${API}/auth/register`, { email, name, password, role, phone });
     setUser(response.data.user);
     localStorage.setItem('session_token', response.data.session_token);
     return response.data;

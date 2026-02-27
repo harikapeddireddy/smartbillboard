@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Building2, Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Login = () => {
@@ -9,6 +9,10 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('demo');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -21,28 +25,54 @@ const Login = () => {
 
     try {
       if (isRegister) {
-        const response = await register(email, name, password, roleParam);
-        
-        // For customers, redirect to two-step verification
-        if (roleParam === 'customer') {
-          toast.success('Account created! Please complete verification.');
-          navigate(`/verify?user_id=${response.user.user_id}&email=${email}&token=${response.session_token}`);
+        // For registration, first send OTP
+        if (!showOtpStep) {
+          if (!phone) {
+            toast.error('Please enter mobile number');
+            setLoading(false);
+            return;
+          }
+          
+          // Send OTP
+          const otpResponse = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/send-mobile-otp?phone=${phone}`);
+          setGeneratedOtp(otpResponse.data.otp);
+          setShowOtpStep(true);
+          toast.success(`OTP sent to ${phone}`);
+          setLoading(false);
           return;
         }
         
+        // Verify OTP
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/verify-mobile`, {
+          phone: phone,
+          otp: otp
+        });
+        
+        // Create account
+        const response = await register(email, name, password, roleParam, phone);
         toast.success('Registration successful!');
+        localStorage.setItem('session_token', response.session_token);
+        
+        // Navigate based on role
+        if (roleParam === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (roleParam === 'agent') {
+          navigate('/agent/dashboard');
+        } else {
+          navigate('/customer/dashboard');
+        }
       } else {
         await login(email, password);
         toast.success('Login successful!');
-      }
 
-      // Navigate based on role
-      if (roleParam === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (roleParam === 'agent') {
-        navigate('/agent/dashboard');
-      } else {
-        navigate('/customer/dashboard');
+        // Navigate based on role
+        if (roleParam === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (roleParam === 'agent') {
+          navigate('/agent/dashboard');
+        } else {
+          navigate('/customer/dashboard');
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Authentication failed');
@@ -89,55 +119,98 @@ const Login = () => {
           </p>
 
           <form onSubmit={handleSubmit} data-testid="login-form">
-            {isRegister && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    data-testid="name-input"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
-                    placeholder="Enter your name"
-                    required
-                  />
+            {isRegister && !showOtpStep && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      data-testid="name-input"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
+                      placeholder="Enter your name"
+                      required
+                    />
+                  </div>
                 </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Mobile Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      data-testid="phone-input"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
+                      placeholder="Enter 10-digit mobile number"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {isRegister && showOtpStep && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Enter OTP</label>
+                <input
+                  data-testid="otp-input"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                />
+                {generatedOtp && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Demo OTP: <strong style={{ fontFamily: 'JetBrains Mono, monospace' }}>{generatedOtp}</strong>
+                  </p>
+                )}
               </div>
             )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  data-testid="email-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
-                  placeholder={roleParam === 'admin' ? 'admin@adgrid.gov' : roleParam === 'agent' ? 'agent@adgrid.gov' : 'customer@example.com'}
-                  required
-                />
-              </div>
-            </div>
+            {(!isRegister || !showOtpStep) && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      data-testid="email-input"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
+                      placeholder={roleParam === 'admin' ? 'admin@adgrid.gov' : roleParam === 'agent' ? 'agent@adgrid.gov' : 'customer@example.com'}
+                      required
+                    />
+                  </div>
+                </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  data-testid="password-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
-                  placeholder="Enter password"
-                  required
-                />
-              </div>
-            </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      data-testid="password-input"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2] transition-all"
+                      placeholder="Enter password"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               data-testid="submit-btn"
@@ -145,7 +218,7 @@ const Login = () => {
               disabled={loading}
               className="w-full bg-[#0056D2] text-white py-2.5 rounded-md font-medium hover:bg-[#0056D2]/90 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Please wait...' : isRegister ? 'Register' : 'Login'}
+              {loading ? 'Please wait...' : showOtpStep ? 'Verify & Register' : isRegister ? 'Send OTP' : 'Login'}
             </button>
           </form>
 
