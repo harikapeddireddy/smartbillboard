@@ -451,6 +451,7 @@ async def get_hoardings(
     category: Optional[str] = None,
     status: Optional[str] = None,
     area: Optional[str] = None,
+    city: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None
 ):
@@ -463,6 +464,8 @@ async def get_hoardings(
         query["status"] = status
     if area:
         query["area"] = {"$regex": area, "$options": "i"}
+    if city:
+        query["city"] = {"$regex": city, "$options": "i"}
     if min_price is not None or max_price is not None:
         query["price_per_day"] = {}
         if min_price is not None:
@@ -472,6 +475,13 @@ async def get_hoardings(
     
     hoardings = await db.hoardings.find(query, {"_id": 0}).to_list(1000)
     return {"hoardings": hoardings, "count": len(hoardings)}
+
+@api_router.get("/areas")
+async def get_areas():
+    """Get unique areas for search"""
+    areas = await db.hoardings.distinct("area")
+    cities = await db.hoardings.distinct("city")
+    return {"areas": sorted(areas), "cities": sorted(cities)}
 
 @api_router.get("/hoardings/{hoarding_id}")
 async def get_hoarding(hoarding_id: str):
