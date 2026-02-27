@@ -395,6 +395,55 @@ async def verify_aadhaar(req: VerifyAadhaarRequest, user: dict = Depends(get_cur
     
     return {"message": "Aadhaar verified successfully", "verified": True}
 
+@api_router.post("/auth/send-verification-email")
+async def send_verification_email(email: str):
+    """Send verification code to email (mock implementation)"""
+    # Generate 6-digit code
+    code = str(secrets.randbelow(1000000)).zfill(6)
+    
+    # Store code in database with expiry
+    await db.verification_codes.insert_one({
+        "email": email,
+        "code": code,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # In production, send email via SendGrid/Resend
+    logger.info(f"Verification code for {email}: {code}")
+    
+    return {"message": "Verification code sent to email", "code": code}  # Remove code in production
+
+@api_router.post("/auth/verify-email")
+async def verify_email(req: VerifyEmailRequest):
+    """Verify email with code"""
+    code_doc = await db.verification_codes.find_one(
+        {"email": req.email, "code": req.code},
+        {"_id": 0}
+    )
+    
+    if not code_doc:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(code_doc["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Verification code expired")
+    
+    # Mark as verified
+    await db.users.update_one(
+        {"email": req.email},
+        {"$set": {"email_verified": True}}
+    )
+    
+    # Delete used code
+    await db.verification_codes.delete_one({"email": req.email, "code": req.code})
+    
+    return {"message": "Email verified successfully", "verified": True}
+
 # ============= HOARDINGS ROUTES =============
 
 @api_router.get("/hoardings")
