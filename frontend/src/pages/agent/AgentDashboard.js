@@ -98,14 +98,24 @@ const AgentDashboard = () => {
               </h1>
               <p className="text-sm text-slate-600">Welcome, {user?.name}</p>
             </div>
-            <button
-              data-testid="logout-btn"
-              onClick={logout}
-              className="flex items-center px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                data-testid="my-requests-btn"
+                onClick={() => navigate('/agent/requests')}
+                className="flex items-center px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                My Requests
+              </button>
+              <button
+                data-testid="logout-btn"
+                onClick={logout}
+                className="flex items-center px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
