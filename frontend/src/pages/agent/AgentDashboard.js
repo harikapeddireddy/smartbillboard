@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
-import { MapPin, LogOut, Upload } from 'lucide-react';
+import { MapPin, LogOut, Upload, FileText } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import { toast } from 'sonner';
 
