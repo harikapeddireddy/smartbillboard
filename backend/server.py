@@ -770,6 +770,95 @@ async def get_recent_bookings(user: dict = Depends(get_current_user)):
     
     return {"bookings": bookings}
 
+@api_router.get("/admin/hoarding-requests")
+async def get_hoarding_requests(user: dict = Depends(get_current_user)):
+    """Get all hoarding requests (Admin only)"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    requests = await db.hoarding_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"requests": requests}
+
+@api_router.post("/admin/approve-hoarding/{request_id}")
+async def approve_hoarding_request(request_id: str, user: dict = Depends(get_current_user)):
+    """Approve hoarding request and create hoarding"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get request
+    request_doc = await db.hoarding_requests.find_one({"request_id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if request_doc["status"] != "Pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Generate unique hoarding ID
+    # Format: APKKD#### (AP = Andhra Pradesh, KKD = Kakinada)
+    last_hoarding = await db.hoardings.find_one({}, {"_id": 0, "hoarding_id": 1}, sort=[("hoarding_id", -1)])
+    
+    if last_hoarding and last_hoarding["hoarding_id"].startswith("APKKD"):
+        # Extract number and increment
+        last_num = int(last_hoarding["hoarding_id"][5:])
+        new_num = last_num + 1
+        hoarding_id = f"APKKD{new_num:04d}"
+    else:
+        # Start from APKKD0050 (after existing 49)
+        hoarding_id = f"APKKD0050"
+    
+    # Create hoarding from request data
+    hoarding_data = request_doc["hoarding_data"]
+    hoarding_data["hoarding_id"] = hoarding_id
+    hoarding_data["status"] = "Available"
+    hoarding_data["images"] = ["https://images.pexels.com/photos/6684281/pexels-photo-6684281.jpeg"]
+    hoarding_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    hoarding_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Insert hoarding
+    await db.hoardings.insert_one(hoarding_data)
+    
+    # Update request status
+    await db.hoarding_requests.update_one(
+        {"request_id": request_id},
+        {"$set": {
+            "status": "Approved",
+            "hoarding_id": hoarding_id,
+            "approved_by": user["user_id"],
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Hoarding request approved", "hoarding_id": hoarding_id}
+
+@api_router.post("/admin/reject-hoarding/{request_id}")
+async def reject_hoarding_request(request_id: str, reason: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Reject hoarding request"""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get request
+    request_doc = await db.hoarding_requests.find_one({"request_id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if request_doc["status"] != "Pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Update request status
+    await db.hoarding_requests.update_one(
+        {"request_id": request_id},
+        {"$set": {
+            "status": "Rejected",
+            "rejected_by": user["user_id"],
+            "rejection_reason": reason or "Not specified",
+            "rejected_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Hoarding request rejected"}
+
 # ============= AGENT ROUTES =============
 
 @api_router.get("/agent/hoardings")
