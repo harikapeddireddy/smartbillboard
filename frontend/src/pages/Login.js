@@ -21,7 +21,15 @@ const Login = () => {
 
     try {
       if (isRegister) {
-        await register(email, name, password, roleParam);
+        const response = await register(email, name, password, roleParam);
+        
+        // For customers, redirect to two-step verification
+        if (roleParam === 'customer') {
+          toast.success('Account created! Please complete verification.');
+          navigate(`/verify?user_id=${response.user.user_id}&email=${email}&token=${response.session_token}`);
+          return;
+        }
+        
         toast.success('Registration successful!');
       } else {
         await login(email, password);
