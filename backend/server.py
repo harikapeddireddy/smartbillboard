@@ -49,6 +49,7 @@ class User(BaseModel):
     phone: Optional[str] = None
     picture: Optional[str] = None
     aadhaar_verified: bool = False
+    email_verified: bool = False
     created_at: datetime
 
 class UserSession(BaseModel):
