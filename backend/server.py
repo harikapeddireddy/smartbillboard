@@ -151,6 +151,25 @@ class MaintenanceUpdateRequest(BaseModel):
     notes: Optional[str] = None
     images: Optional[List[str]] = []
 
+class HoardingRequestModel(BaseModel):
+    title: str
+    location: str
+    area: str
+    city: str
+    district: str
+    country: str
+    coordinates: Dict[str, float]
+    size: str
+    category: str
+    price_per_day: float
+    visibility_level: str
+    description: str
+    type: str
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    code: str
+
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
