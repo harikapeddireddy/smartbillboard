@@ -1,0 +1,1276 @@
+[
+  {
+    "UIB": "APKKD0001",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233685
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0002",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233686
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0003",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233687
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0004",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233688
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0005",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233689
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0006",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.23369
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0007",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233691
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0008",
+    "title": "Bhanugudi Junction",
+    "description": "Outdoor billboard at Bhanugudi Junction",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Bhanugudi Junction",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233692
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0009",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233693
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0010",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "20x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233694
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0011",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "12x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233695
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0012",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "18x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233696
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0013",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "25x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233697
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0014",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233698
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0015",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233699
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0016",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.2337
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0017",
+    "title": "Jagannaickpur",
+    "description": "Outdoor billboard at Jagannaickpur",
+    "dimensions": "12x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Jagannaickpur",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233701
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0018",
+    "title": "Suryaraopeta",
+    "description": "Outdoor billboard at Suryaraopeta",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Suryaraopeta",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233702
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0019",
+    "title": "Suryaraopeta",
+    "description": "Outdoor billboard at Suryaraopeta",
+    "dimensions": "22x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Suryaraopeta",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233703
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0020",
+    "title": "Suryaraopeta",
+    "description": "Outdoor billboard at Suryaraopeta",
+    "dimensions": "18x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Suryaraopeta",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233704
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0021",
+    "title": "Suryaraopeta",
+    "description": "Outdoor billboard at Suryaraopeta",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Suryaraopeta",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233705
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0022",
+    "title": "Suryaraopeta",
+    "description": "Outdoor billboard at Suryaraopeta",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Suryaraopeta",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233706
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0023",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233707
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0024",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "25x15",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233708
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0025",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233709
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0026",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "20x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.23371
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0027",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233711
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0028",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "22x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233712
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0029",
+    "title": "Mainroad",
+    "description": "Outdoor billboard at Mainroad",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Mainroad",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233713
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0030",
+    "title": "Beach Road",
+    "description": "Outdoor billboard at Beach Road",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Beach Road",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233714
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0031",
+    "title": "Beach Road",
+    "description": "Outdoor billboard at Beach Road",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Beach Road",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233715
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0032",
+    "title": "Beach Road",
+    "description": "Outdoor billboard at Beach Road",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Beach Road",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233716
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0033",
+    "title": "Beach Road",
+    "description": "Outdoor billboard at Beach Road",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Beach Road",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233717
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0034",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "25x13",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233718
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0035",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "18x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233719
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0036",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.23372
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0037",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233721
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0038",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233722
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0039",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "25x15",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233723
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0040",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233724
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0041",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "20x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233725
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0042",
+    "title": "Gandhi Nagar",
+    "description": "Outdoor billboard at Gandhi Nagar",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Gandhi Nagar",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233726
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0043",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "22x12",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233727
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0044",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233728
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0045",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "15x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233729
+      }
+    },
+    "category": "Standard",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0046",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "20x10",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 3000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.23373
+      }
+    },
+    "category": "Premium",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0047",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233731
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0048",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "10x8",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 700
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233732
+      }
+    },
+    "category": "Economy",
+    "type": "Basic",
+    "availability": [],
+    "status": "active"
+  },
+  {
+    "UIB": "APKKD0049",
+    "title": "Boat Club Area",
+    "description": "Outdoor billboard at Boat Club Area",
+    "dimensions": "25x13",
+    "images": [],
+    "pricing": {
+      "perDay": null,
+      "perMonth": null,
+      "baseprice": 2000
+    },
+    "location": {
+      "country": "India",
+      "district": "Kakinada",
+      "city": "Kakinada",
+      "area": "Boat Club Area",
+      "coordinates": {
+        "lat": 16.972568,
+        "lng": 82.233733
+      }
+    },
+    "category": "Premium",
+    "type": "Digital",
+    "availability": [],
+    "status": "active"
+  }
+]
