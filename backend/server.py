@@ -262,6 +262,7 @@ async def register(req: RegisterRequest):
         "name": req.name,
         "role": req.role,
         "aadhaar_verified": False,
+        "email_verified": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
