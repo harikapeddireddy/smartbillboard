@@ -817,6 +817,58 @@ async def get_maintenance_logs(hoarding_id: str, user: dict = Depends(get_curren
     logs = await db.maintenance_logs.find({"hoarding_id": hoarding_id}, {"_id": 0}).to_list(100)
     return {"logs": logs}
 
+@api_router.post("/agent/hoarding-request")
+async def request_new_hoarding(req: HoardingRequestModel, user: dict = Depends(get_current_user)):
+    """Agent requests to add new hoarding (requires admin approval)"""
+    if user["role"] != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Generate request ID
+    request_id = f"REQ_{uuid.uuid4().hex[:10].upper()}"
+    
+    # Create request
+    request_data = {
+        "request_id": request_id,
+        "agent_id": user["user_id"],
+        "agent_name": user["name"],
+        "hoarding_data": req.dict(),
+        "status": "Pending",  # Pending, Approved, Rejected
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.hoarding_requests.insert_one(request_data)
+    
+    return {"message": "Hoarding request submitted successfully", "request_id": request_id, "status": "Pending"}
+
+@api_router.get("/agent/my-requests")
+async def get_my_requests(user: dict = Depends(get_current_user)):
+    """Get agent's hoarding requests"""
+    if user["role"] != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    requests = await db.hoarding_requests.find({"agent_id": user["user_id"]}, {"_id": 0}).to_list(100)
+    return {"requests": requests}
+
+@api_router.delete("/agent/hoarding/{hoarding_id}")
+async def delete_hoarding(hoarding_id: str, user: dict = Depends(get_current_user)):
+    """Agent deletes a hoarding"""
+    if user["role"] not in ["agent", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Check if hoarding exists and not booked
+    hoarding = await db.hoardings.find_one({"hoarding_id": hoarding_id}, {"_id": 0})
+    if not hoarding:
+        raise HTTPException(status_code=404, detail="Hoarding not found")
+    
+    if hoarding["status"] == "Booked":
+        raise HTTPException(status_code=400, detail="Cannot delete booked hoarding")
+    
+    # Delete hoarding
+    await db.hoardings.delete_one({"hoarding_id": hoarding_id})
+    
+    return {"message": "Hoarding deleted successfully"}
+
 # ============= AI ROUTES =============
 
 @api_router.post("/ai/chat")
