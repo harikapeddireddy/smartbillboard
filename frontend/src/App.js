@@ -6,9 +6,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthCallback from './components/AuthCallback';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import TwoStepVerification from './pages/TwoStepVerification';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminRequests from './pages/admin/AdminRequests';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AgentDashboard from './pages/agent/AgentDashboard';
+import AgentRequests from './pages/agent/AgentRequests';
 import HoardingDetails from './pages/customer/HoardingDetails';
 import Bookings from './pages/customer/Bookings';
 import PaymentSuccess from './pages/customer/PaymentSuccess';
@@ -26,6 +29,7 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/verify" element={<TwoStepVerification />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       
       {/* Admin Routes */}
@@ -34,6 +38,14 @@ function AppRouter() {
         element={
           <ProtectedRoute requiredRole="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/requests"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminRequests />
           </ProtectedRoute>
         }
       />
@@ -78,6 +90,14 @@ function AppRouter() {
         element={
           <ProtectedRoute requiredRole="agent">
             <AgentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/agent/requests"
+        element={
+          <ProtectedRoute requiredRole="agent">
+            <AgentRequests />
           </ProtectedRoute>
         }
       />
